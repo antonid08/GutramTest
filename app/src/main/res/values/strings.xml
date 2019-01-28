@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Gurtam Android Test</string>
+
+    <!--Prime numbers generator-->
+    <string name="limit_label">Upper limit</string>
+    <string name="generate">Generate</string>
+    <string name="invalid_limit_error">Limit must be not empty</string>
+
+</resources>
