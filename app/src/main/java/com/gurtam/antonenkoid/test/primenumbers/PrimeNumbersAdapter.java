@@ -6,8 +6,6 @@ import android.widget.TextView;
 import com.gurtam.antonenkoid.test.R;
 import com.gurtam.antonenkoid.test.utils.BaseRecyclerAdapter;
 
-import java.math.BigInteger;
-
 import androidx.annotation.NonNull;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -17,15 +15,15 @@ import butterknife.ButterKnife;
  *
  * @author antonenkoid
  */
-public class PrimeNumbersAdapter extends BaseRecyclerAdapter<BigInteger, BaseRecyclerAdapter.ItemViewHolder<BigInteger>> {
+public class PrimeNumbersAdapter extends BaseRecyclerAdapter<Integer, BaseRecyclerAdapter.ItemViewHolder<Integer>> {
 
     @NonNull
     @Override
-    public ItemViewHolder<BigInteger> onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
+    public ItemViewHolder<Integer> onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
         return new NumberViewHolder(viewGroup);
     }
 
-    static class NumberViewHolder extends BaseRecyclerAdapter.ItemViewHolder<BigInteger> {
+    static class NumberViewHolder extends BaseRecyclerAdapter.ItemViewHolder<Integer> {
 
         @BindView(R.id.number)
         TextView number;
@@ -36,7 +34,7 @@ public class PrimeNumbersAdapter extends BaseRecyclerAdapter<BigInteger, BaseRec
         }
 
         @Override
-        public void bind(BigInteger item) {
+        public void bind(Integer item) {
             number.setText(String.valueOf(item));
         }
 

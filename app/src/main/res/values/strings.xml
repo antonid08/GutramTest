@@ -6,4 +6,7 @@
     <string name="generate">Generate</string>
     <string name="invalid_limit_error">Limit must be not empty</string>
 
+    <string name="previous_page">Previous page</string>
+    <string name="next_page">Next page</string>
+
 </resources>

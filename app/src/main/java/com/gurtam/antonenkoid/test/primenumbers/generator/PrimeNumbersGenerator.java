@@ -1,8 +1,5 @@
 package com.gurtam.antonenkoid.test.primenumbers.generator;
 
-import java.math.BigInteger;
-import java.util.List;
-
 /**
  * Generates prime numbers from 2 to passed limitInput.
  *
@@ -16,6 +13,6 @@ public interface PrimeNumbersGenerator {
      * @param limit upper limitInput for prime numbers
      * @return list of prime numbers from 2 to limitInput
      */
-    List<BigInteger> generate(BigInteger limit);
+    void generate(int limit);
 
 }

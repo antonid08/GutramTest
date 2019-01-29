@@ -1,18 +1,18 @@
 package com.gurtam.antonenkoid.test.primenumbers;
 
-import java.math.BigInteger;
-import java.util.List;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.EditText;
 
 import com.gurtam.antonenkoid.test.R;
+import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.utils.Dialogs;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.UiUtils;
 import com.gurtam.antonenkoid.test.utils.views.ProgressPanel;
+import com.gurtam.antonenkoid.test.utils.views.pagination.Page;
+import com.gurtam.antonenkoid.test.utils.views.pagination.PaginationView;
 
-import android.graphics.drawable.GradientDrawable;
-import android.os.Bundle;
-import android.text.TextUtils;
-import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -29,11 +29,16 @@ import butterknife.OnClick;
  */
 public class PrimeNumbersActivity extends AppCompatActivity {
 
+    private static final int NUMBERS_PAGE_SIZE = 100;
+
     @BindView(R.id.progress)
     ProgressPanel progress;
 
     @BindView(R.id.limitInput)
     EditText limitInput;
+
+    @BindView(R.id.pagination)
+    PaginationView pagination;
 
     @BindView(R.id.primeNumbers)
     RecyclerView primeNumbers;
@@ -42,6 +47,8 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
     private PrimeNumbersAdapter adapter;
 
+    private Page currentNumbersPage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,8 +56,12 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         viewModel = ViewModelProviders.of(this).get(PrimeNumbersViewModel.class);
-        viewModel.getPrimeNumbers().observe(this, this::bindPrimeNumbers);
+        viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
         viewModel.getStatus().observe(this, this::bindGeneratingStatus);
+
+        currentNumbersPage = new Page(0, NUMBERS_PAGE_SIZE);
+        pagination.setOnPageChangedListener(new NumbersPageChangeListener());
+        UiUtils.setVisibility(false, pagination);
 
         primeNumbers.setLayoutManager(new LinearLayoutManager(this));
         primeNumbers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
@@ -60,7 +71,7 @@ public class PrimeNumbersActivity extends AppCompatActivity {
     @OnClick(R.id.generate)
     void onGenerateClick() {
         if (!TextUtils.isEmpty(limitInput.getText())) {
-            BigInteger limit = BigInteger.valueOf(Long.valueOf(limitInput.getText().toString()));
+            int limit = Integer.valueOf(limitInput.getText().toString());
             viewModel.generatePrimeNumbers(limit);
             UiUtils.hideKeyboard(this);
         } else {
@@ -68,15 +79,30 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         }
     }
 
-    private void bindPrimeNumbers(List<BigInteger> primeNumbers) {
-        adapter.setData(primeNumbers);
+    private void bindPrimeNumbersChunk(PrimeNumbersChunk primeNumbersChunk) {
+        currentNumbersPage = primeNumbersChunk.getPage();
+        adapter.setData(primeNumbersChunk.getPrimeNumbers());
     }
 
     private void bindGeneratingStatus(Status status) {
         if (status.isInProgress()) {
             progress.show();
         } else {
+            viewModel.receivePrimeNumbers(new Page(0, NUMBERS_PAGE_SIZE));
             progress.hide();
+        }
+    }
+
+    private class NumbersPageChangeListener implements PaginationView.OnPageChangedListener {
+
+        @Override
+        public void onPreviousPage() {
+
+        }
+
+        @Override
+        public void onNextPage() {
+
         }
     }
 
