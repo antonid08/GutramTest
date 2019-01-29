@@ -57,9 +57,12 @@ public class PrimeNumbersViewModel extends ViewModel {
 
         @Override
         public void run() {
-            primeNumbers.setValue(primeNumbersGenerator.generate(limit));
+            List<BigInteger> result = primeNumbersGenerator.generate(limit);
 
-            new Handler(Looper.getMainLooper()).post(() -> status.setValue(Status.onSuccess()));
+            new Handler(Looper.getMainLooper()).post(() -> {
+                primeNumbers.setValue(result);
+                status.setValue(Status.onSuccess());
+            });
         }
     }
 

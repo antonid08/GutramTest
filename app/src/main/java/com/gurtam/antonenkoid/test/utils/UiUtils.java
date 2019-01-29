@@ -1,9 +1,11 @@
 package com.gurtam.antonenkoid.test.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 
 /**
  * Utility methods for UI.
@@ -41,6 +43,30 @@ public class UiUtils {
     public static void setVisibility(boolean visible, View... views) {
         for (View view : views) {
             view.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    /**
+     * Hide virtual keyboard for passed decor view
+     *
+     * @param context Context android context
+     * @param decorView {@link View} activity content
+     * @return trues if keyboard has hidden.
+     */
+    public static boolean hideKeyboard(Context context, View decorView) {
+        InputMethodManager inputManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        return inputManager.hideSoftInputFromWindow(decorView.getWindowToken(), 0);
+    }
+
+    /**
+     * Hide virtual keyboard for activity.
+     *
+     * @param activity Activity in which need to hide keyboard
+     */
+    public static void hideKeyboard(Activity activity) {
+        View contentView = activity.findViewById(android.R.id.content);
+        if (contentView != null) {
+            hideKeyboard(activity, contentView);
         }
     }
 

@@ -1,13 +1,12 @@
 package com.gurtam.antonenkoid.test.utils.views;
 
+import com.gurtam.antonenkoid.test.R;
+import com.gurtam.antonenkoid.test.utils.UiUtils;
+
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
-
-import com.gurtam.antonenkoid.test.R;
-import com.gurtam.antonenkoid.test.utils.UiUtils;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -29,6 +28,8 @@ public class ProgressPanel extends FrameLayout implements Progress {
     @BindView(R.id.progressBar)
     View progressBar;
 
+    private View progressView;
+
     public ProgressPanel(Context context) {
         super(context);
         init();
@@ -40,16 +41,19 @@ public class ProgressPanel extends FrameLayout implements Progress {
     }
 
     private void init() {
-        inflate(getContext(), R.layout.progress_panel_layout, this);
+        progressView = UiUtils.inflate(getContext(), R.layout.progress_panel_layout);
 
-        setOnClickListener((view) -> {
-        });
+        progressView.setOnClickListener((view) -> {});
 
-        ButterKnife.bind(this);
+        ButterKnife.bind(progressView);
     }
 
     @Override
     public final void show() {
+        if (indexOfChild(progressView) < 0) {
+            addView(progressView);
+        }
+
         changeProgressVisibility(true);
     }
 
@@ -59,7 +63,7 @@ public class ProgressPanel extends FrameLayout implements Progress {
     }
 
     private void changeProgressVisibility(boolean show) {
-        UiUtils.setVisibility(show, progressBar);
+        UiUtils.setVisibility(show, progressView);
     }
 
 }
