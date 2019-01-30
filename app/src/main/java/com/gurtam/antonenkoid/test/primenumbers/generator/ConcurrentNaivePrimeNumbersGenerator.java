@@ -2,9 +2,12 @@ package com.gurtam.antonenkoid.test.primenumbers.generator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 /**
  * Generates sequence of prime numbers using brut force and stores it in {@link PrimeNumbersCache}.
@@ -15,17 +18,27 @@ import java.util.concurrent.Executors;
  */
 public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerator {
 
+    private static final Logger LOGGER = Logger.getLogger(ConcurrentNaivePrimeNumbersGenerator.class.getSimpleName());
+
+    private static final int GENERATING_TIMEOUT_MS = 5000;
+
+    private ExecutorService threadPool;
+
     private PrimeNumbersCache cache;
+
+    private Timer timeoutTimer;
+
 
     public ConcurrentNaivePrimeNumbersGenerator(PrimeNumbersCache cache) {
         this.cache = cache;
     }
 
     @Override
-    public void generate(int limit) {
+    public void generate(int limit) throws GenerationTimeoutException {
         if (limit < 2) {
             return;
         }
+
 
         final int cachedNumbersCount = cache.getCachedNumbersCount();
 
@@ -36,14 +49,29 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         insertEmptyValues(cachedNumbersCount, limit);
 
         int threadPoolSize = calculateThreadPoolSize(cachedNumbersCount, limit);
-        ExecutorService threadPool = Executors.newFixedThreadPool(threadPoolSize);
+        threadPool = Executors.newFixedThreadPool(threadPoolSize);
+        initializeTimeoutTimer();
 
         try {
             threadPool.invokeAll(createChunkProcessors(cachedNumbersCount, limit, threadPoolSize));
+            timeoutTimer.cancel();
         }
         catch (InterruptedException e) {
-            throw new IllegalStateException();
+            LOGGER.warning("Generator was interrupted before generation finished.");
+            timeoutTimer.cancel();
+            cache.clear();
+            throw new GenerationTimeoutException();
         }
+
+    }
+
+    private void initializeTimeoutTimer() {
+        if (timeoutTimer != null) {
+            timeoutTimer.cancel();
+        }
+
+        timeoutTimer = new Timer();
+        timeoutTimer.schedule(new TimeoutTask(), GENERATING_TIMEOUT_MS);
     }
 
     private void insertEmptyValues(int cachedNumbersCount, int limit) {
@@ -112,5 +140,16 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
             return null;
         }
     }
+
+
+    private class TimeoutTask extends TimerTask {
+
+        @Override
+        public void run() {
+            threadPool.shutdownNow();
+        }
+    }
+
+
 }
 

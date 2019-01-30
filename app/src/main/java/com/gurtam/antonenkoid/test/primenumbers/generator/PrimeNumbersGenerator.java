@@ -14,6 +14,6 @@ public interface PrimeNumbersGenerator {
      *
      * @return list of prime numbers from 0 to limitInput
      */
-    void generate(int limit);
+    void generate(int limit) throws GenerationTimeoutException;
 
 }
