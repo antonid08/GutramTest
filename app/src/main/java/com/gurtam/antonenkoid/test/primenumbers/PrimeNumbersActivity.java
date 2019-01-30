@@ -5,12 +5,14 @@ import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.utils.Dialogs;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.UiUtils;
-import com.gurtam.antonenkoid.test.utils.pagination.PaginationManager;
 import com.gurtam.antonenkoid.test.utils.pagination.PaginationView;
 import com.gurtam.antonenkoid.test.utils.views.ProgressPanel;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
@@ -44,8 +46,6 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
     private PrimeNumbersAdapter adapter;
 
-    private PaginationManager paginationManager;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,9 +55,8 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
         viewModel = ViewModelProviders.of(this).get(PrimeNumbersViewModel.class);
         viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
-        viewModel.getStatus().observe(this, this::bindGeneratingStatus);
+        viewModel.getStatus().observe(this, this::bindStatus);
 
-        paginationManager = new PaginationManager();
         pagination.setOnPageChangedListener(new NumbersPageChangeListener());
         UiUtils.setVisibility(false, pagination);
 
@@ -66,11 +65,29 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         numbers.setAdapter(adapter = new PrimeNumbersAdapter());
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.numbers_activity_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.clear_cache:
+                viewModel.clearPrimeNumbersCache();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     @OnClick(R.id.generate)
     void onGenerateClick() {
         if (!TextUtils.isEmpty(limitInput.getText())) {
-            int limit = Integer.valueOf(limitInput.getText().toString());
-            viewModel.generatePrimeNumbers(limit);
+            viewModel.generatePrimeNumbers(Integer.valueOf(limitInput.getText().toString()));
             UiUtils.hideKeyboard(this);
         } else {
             Dialogs.showOkDialog(this, R.string.invalid_limit_error);
@@ -86,12 +103,13 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         pagination.setPreviousPageAvailable(primeNumbersChunk.getPage().getIndex() > 0);
     }
 
-    private void bindGeneratingStatus(Status status) {
+    private void bindStatus(Status status) {
         if (status.isInProgress()) {
+            //todo disable menu
             progress.show();
         } else {
-            paginationManager = new PaginationManager();
-            viewModel.receivePrimeNumbers(paginationManager.getCurrentPage());
+            //todo save state of pagination after orientation changing
+            viewModel.receiveFirstPrimeNumbersPage();
             progress.hide();
         }
     }
@@ -100,12 +118,12 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
         @Override
         public void onPreviousPage() {
-            viewModel.receivePrimeNumbers(paginationManager.previousPage());
+            viewModel.receivePreviousPrimeNumbersPage();
         }
 
         @Override
         public void onNextPage() {
-            viewModel.receivePrimeNumbers(paginationManager.nextPage());
+            viewModel.receiveNextPrimeNumbersPage();
         }
     }
 

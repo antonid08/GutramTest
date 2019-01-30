@@ -6,64 +6,79 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.gurtam.antonenkoid.test.primenumbers.PrimeNumbersRepository;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
-
 /**
- * Generate and save sequence of prime numbers using brut force.
+ * Generates sequence of prime numbers using brut force and stores it in {@link PrimeNumbersCache}.
+ *
+ * <p>Uses cache when generating.</p>
  *
  * @author antonenkoid
  */
 public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerator {
 
-    private PrimeNumbersRepository repository;
+    private PrimeNumbersCache cache;
+
+    public ConcurrentNaivePrimeNumbersGenerator(PrimeNumbersCache cache) {
+        this.cache = cache;
+    }
 
     @Override
-    public void generate(int limit, PrimeNumbersRepository repository) {
-        this.repository = repository;
+    public void generate(int limit) {
+        if (limit < 2) {
+            return;
+        }
 
-        repository.clearPrimeNumbers();
+        final int cachedNumbersCount = cache.getCachedNumbersCount();
 
-        insertEmptyValues(limit);
+        if (cachedNumbersCount >= limit) {
+            return;
+        }
 
-        int threadPoolSize = calculateThreadPoolSize(limit);
+        insertEmptyValues(cachedNumbersCount, limit);
+
+        int threadPoolSize = calculateThreadPoolSize(cachedNumbersCount, limit);
         ExecutorService threadPool = Executors.newFixedThreadPool(threadPoolSize);
 
         try {
-            threadPool.invokeAll(createChunkProcessors(limit, threadPoolSize));
+            threadPool.invokeAll(createChunkProcessors(cachedNumbersCount, limit, threadPoolSize));
         }
         catch (InterruptedException e) {
-            //todo exception
+            throw new IllegalStateException();
         }
     }
 
-    private void insertEmptyValues(int limit) {
-        for (int i = 2; i < limit; i++) {
-            repository.insertNumber(new NumberEntity(i, false));
+    private void insertEmptyValues(int cachedNumbersCount, int limit) {
+        for (int i = cachedNumbersCount; i < limit; i++) {
+            cache.put(i, false);
         }
     }
 
-    private int calculateThreadPoolSize(int limit) {
+    private int calculateThreadPoolSize(int cachedNumbersCount, int limit) {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
-        return (limit - 2) < availableProcessors ? (limit - 1) : availableProcessors;
+        int itemsToProcessCount = limit - cachedNumbersCount;
+
+        return itemsToProcessCount < availableProcessors ? itemsToProcessCount : availableProcessors;
     }
 
-    private List<Callable<Void>> createChunkProcessors(int limit, int threadPoolSize) {
+    private List<Callable<Void>> createChunkProcessors(int cachedNumbersCount, int limit, int threadPoolSize) {
         List<Callable<Void>> processors = new ArrayList<>();
 
-        int fullChunkSize = (int) Math.ceil((double) (limit - 2) / threadPoolSize);
+        int fullChunkSize = (int) Math.ceil((double) (limit - cachedNumbersCount) / threadPoolSize);
 
         for (int i = 0; i < threadPoolSize; i++) {
-            int availableNumbers = (limit - i * (fullChunkSize + 1));
-            int chunkSize = availableNumbers > fullChunkSize ? fullChunkSize : availableNumbers;
-            int offset = i * chunkSize + 2;
-            processors.add(new ProcessNumbersChunkCallable(offset, offset + chunkSize, repository));
+            int numbersLeftToProcess = (limit - i * fullChunkSize - cachedNumbersCount);
+            int chunkSize = numbersLeftToProcess > fullChunkSize ? fullChunkSize : numbersLeftToProcess;
+            int offset = i * fullChunkSize + cachedNumbersCount;
+            processors.add(new ProcessNumbersChunkCallable(offset, offset + chunkSize, cache));
         }
 
         return processors;
     }
 
     private boolean isPrime(int number) {
+        if (number == 0 || number == 1) {
+            return false;
+        }
+
         for (int i = 2; i < number; i++) {
             if (number % i == 0) {
                 return false;
@@ -78,19 +93,19 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         private int from;
         private int to;
 
-        private PrimeNumbersRepository repository;
+        private PrimeNumbersCache cache;
 
-        ProcessNumbersChunkCallable(int from, int to, PrimeNumbersRepository repository) {
+        ProcessNumbersChunkCallable(int from, int to, PrimeNumbersCache cache) {
             this.from = from;
             this.to = to;
-            this.repository = repository;
+            this.cache = cache;
         }
 
         @Override
         public Void call() {
             for (int number = from; number < to; number++) {
                 if (isPrime(number)) {
-                    repository.updateNumber(new NumberEntity(number, true));
+                    cache.put(number, true);
                 }
             }
 

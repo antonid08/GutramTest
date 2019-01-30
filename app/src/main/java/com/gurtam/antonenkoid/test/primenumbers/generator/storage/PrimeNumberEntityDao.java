@@ -4,6 +4,7 @@ import java.util.List;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -15,14 +16,14 @@ import androidx.room.Update;
 @Dao
 public interface PrimeNumberEntityDao {
 
-    @Insert
-    void insert(NumberEntity primeNumber);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insert(NumberEntity primeNumber);
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    void update(NumberEntity number);
 
     @Query("DELETE FROM numbers")
     void deleteAll();
-
-    @Update()
-    void update(NumberEntity number);
 
     /**
      * Get page of numbers from database
@@ -30,7 +31,10 @@ public interface PrimeNumberEntityDao {
      * @param index index of first record
      * @param size count of needed records
      */
-    @Query("SELECT * from numbers where isPrime = 1 limit :index, :size")
-    List<NumberEntity> getNumbers(int index, int size);
+    @Query("SELECT * from numbers where isPrime = 1 and number < :upperLimit limit :index, :size")
+    List<NumberEntity> getNumbers(int index, int size, int upperLimit);
+
+    @Query("SELECT COUNT(number) FROM numbers")
+    int getNumbersCount();
 
 }

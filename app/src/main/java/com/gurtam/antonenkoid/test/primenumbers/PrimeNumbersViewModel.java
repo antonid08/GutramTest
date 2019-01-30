@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gurtam.antonenkoid.test.primenumbers.generator.ConcurrentNaivePrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersCache;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
+import com.gurtam.antonenkoid.test.utils.BaseAsyncTask;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.pagination.Page;
+import com.gurtam.antonenkoid.test.utils.pagination.PaginationManager;
 
 import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
@@ -32,72 +33,115 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     private PrimeNumbersGenerator primeNumbersGenerator;
 
+    private PrimeNumbersCache primeNumbersCache;
+
+    private PaginationManager paginationManager;
+
+    private int currentUpperLimit;
+
     public PrimeNumbersViewModel(@NonNull Application application) {
         super(application);
 
+        //fixme inject
         primeNumbersRepository = new PrimeNumbersRepository(getApplication());
-        primeNumbersGenerator = new ConcurrentNaivePrimeNumbersGenerator(); //fixme inject
+        primeNumbersCache = new PrimeNumbersCache(primeNumbersRepository);
+        primeNumbersGenerator = new ConcurrentNaivePrimeNumbersGenerator(primeNumbersCache);
 
         status = new MutableLiveData<>();
         primeNumbersChunk = new MutableLiveData<>();
+
+        paginationManager = new PaginationManager();
     }
 
     void generatePrimeNumbers(int limit) {
+        currentUpperLimit = limit;
         status.setValue(Status.onStart());
-        new PrimeNumberThread(limit).start();
+        new PrimeNumberAsyncTask(limit).execute();
     }
 
-    public MutableLiveData<PrimeNumbersChunk> getPrimeNumbersChunk() {
+    MutableLiveData<PrimeNumbersChunk> getPrimeNumbersChunk() {
         return primeNumbersChunk;
     }
 
-    void receivePrimeNumbers(Page page) {
-        new GetNumbersThread(page).start();
+    void receiveFirstPrimeNumbersPage() {
+        paginationManager = new PaginationManager();
+        new GetNumbersAsyncTask(paginationManager.getCurrentPage(), currentUpperLimit).execute();
+    }
+
+    void receivePreviousPrimeNumbersPage() {
+        new GetNumbersAsyncTask(paginationManager.previousPage(), currentUpperLimit).execute();
+    }
+
+    void receiveNextPrimeNumbersPage() {
+        new GetNumbersAsyncTask(paginationManager.nextPage(), currentUpperLimit).execute();
     }
 
     MutableLiveData<Status> getStatus() {
         return status;
     }
 
+    void clearPrimeNumbersCache() {
+        new ClearCacheAsyncTask().execute();
+    }
+
     // fixme remove it
-    private class PrimeNumberThread extends Thread {
+    private class PrimeNumberAsyncTask extends BaseAsyncTask<Void, Void> {
 
         private int limit;
 
-        PrimeNumberThread(int limit) {
+        PrimeNumberAsyncTask(int limit) {
             this.limit = limit;
         }
 
         @Override
-        public void run() {
-            primeNumbersGenerator.generate(limit, primeNumbersRepository);
-
-            new Handler(Looper.getMainLooper()).post(() -> {
-                status.setValue(Status.onSuccess());
-            });
-        }
-    }
-
-    private class GetNumbersThread extends Thread {
-
-        private Page page;
-
-        GetNumbersThread(Page page) {
-            this.page = page;
+        protected Void asyncOperation(Void... voids) throws Exception {
+            primeNumbersGenerator.generate(limit);
+            return null;
         }
 
         @Override
-        public void run() {
+        protected void onSuccess(Void aVoid) {
+            status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
+        }
+
+        @Override
+        protected void onFail(Exception e) {
+            // todo
+        }
+    }
+
+    private class GetNumbersAsyncTask extends BaseAsyncTask<Void, PrimeNumbersChunk> {
+
+        private Page page;
+
+        private int upperLimit;
+
+        public GetNumbersAsyncTask(Page page, int upperLimit) {
+            this.page = page;
+            this.upperLimit = upperLimit;
+        }
+
+        @Override
+        protected PrimeNumbersChunk asyncOperation(Void... voids) throws Exception {
             List<NumberEntity> primeNumberEntities =
-                primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1);
+                primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1, upperLimit);
 
             boolean isNextPageAvailable = primeNumberEntities.size() == page.getSize() + 1;
             List<Integer> primeNumbers =
                 convert(isNextPageAvailable ? primeNumberEntities.subList(0, page.getSize()) : primeNumberEntities);
 
-            new Handler(Looper.getMainLooper()).post(() -> {
-                primeNumbersChunk.setValue(new PrimeNumbersChunk(primeNumbers, page, isNextPageAvailable));
-            });
+            return new PrimeNumbersChunk(primeNumbers, page, isNextPageAvailable);
+        }
+
+
+        @Override
+        protected void onSuccess(PrimeNumbersChunk numbersChunk) {
+            primeNumbersChunk.setValue(numbersChunk);
+        }
+
+        @Override
+        protected void onFail(Exception e) {
+            // todo
         }
 
         private List<Integer> convert(List<NumberEntity> primeNumbers) {
@@ -107,6 +151,25 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
             }
 
             return result;
+        }
+    }
+
+    private class ClearCacheAsyncTask extends BaseAsyncTask<Void, Void> {
+
+        @Override
+        protected Void asyncOperation(Void... voids) throws Exception {
+            primeNumbersCache.clear();
+            return null;
+        }
+
+        @Override
+        protected void onSuccess(Void aVoid) {
+            status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
+        }
+
+        @Override
+        protected void onFail(Exception e) {
+
         }
     }
 
