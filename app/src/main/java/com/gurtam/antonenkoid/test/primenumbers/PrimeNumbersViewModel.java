@@ -3,10 +3,10 @@ package com.gurtam.antonenkoid.test.primenumbers;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.gurtam.antonenkoid.test.primenumbers.generator.NaivePrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generator.ConcurrentNaivePrimeNumbersGenerator;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.pagination.Page;
 
@@ -36,7 +36,7 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         super(application);
 
         primeNumbersRepository = new PrimeNumbersRepository(getApplication());
-        primeNumbersGenerator = new NaivePrimeNumbersGenerator(); //fixme inject
+        primeNumbersGenerator = new ConcurrentNaivePrimeNumbersGenerator(); //fixme inject
 
         status = new MutableLiveData<>();
         primeNumbersChunk = new MutableLiveData<>();
@@ -88,7 +88,7 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
         @Override
         public void run() {
-            List<PrimeNumberEntity> primeNumberEntities =
+            List<NumberEntity> primeNumberEntities =
                 primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1);
 
             boolean isNextPageAvailable = primeNumberEntities.size() == page.getSize() + 1;
@@ -100,10 +100,10 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
             });
         }
 
-        private List<Integer> convert(List<PrimeNumberEntity> primeNumbers) {
+        private List<Integer> convert(List<NumberEntity> primeNumbers) {
             List<Integer> result = new ArrayList<>();
-            for (PrimeNumberEntity primeNumberEntity : primeNumbers) {
-                result.add(primeNumberEntity.getNumber());
+            for (NumberEntity numberEntity : primeNumbers) {
+                result.add(numberEntity.getNumber());
             }
 
             return result;

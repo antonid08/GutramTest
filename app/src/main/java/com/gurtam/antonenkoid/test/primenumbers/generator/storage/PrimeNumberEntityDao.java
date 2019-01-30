@@ -5,9 +5,10 @@ import java.util.List;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 /**
- * DAO for {@link PrimeNumberEntity}
+ * DAO for {@link NumberEntity}
  *
  * @author antonenkoid
  */
@@ -15,10 +16,13 @@ import androidx.room.Query;
 public interface PrimeNumberEntityDao {
 
     @Insert
-    void insert(PrimeNumberEntity primeNumber);
+    void insert(NumberEntity primeNumber);
 
-    @Query("DELETE FROM prime_numbers")
+    @Query("DELETE FROM numbers")
     void deleteAll();
+
+    @Update()
+    void update(NumberEntity number);
 
     /**
      * Get page of numbers from database
@@ -26,7 +30,7 @@ public interface PrimeNumberEntityDao {
      * @param index index of first record
      * @param size count of needed records
      */
-    @Query("SELECT * from prime_numbers limit :index, :size")
-    List<PrimeNumberEntity> getNumbers(int index, int size);
+    @Query("SELECT * from numbers where isPrime = 1 limit :index, :size")
+    List<NumberEntity> getNumbers(int index, int size);
 
 }

@@ -2,14 +2,14 @@ package com.gurtam.antonenkoid.test;
 
 import android.content.Context;
 
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntityDao;
 
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {PrimeNumberEntity.class}, version = 1)
+@Database(entities = {NumberEntity.class}, version = 2)
 public abstract class AppRoomDatabase extends RoomDatabase {
 
     private static volatile AppRoomDatabase INSTANCE;

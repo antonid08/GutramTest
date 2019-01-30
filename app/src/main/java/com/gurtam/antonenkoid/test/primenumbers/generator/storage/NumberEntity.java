@@ -9,18 +9,26 @@ import androidx.room.PrimaryKey;
  *
  * @author antonenkoid
  */
-@Entity(tableName = "prime_numbers")
-public class PrimeNumberEntity {
+@Entity(tableName = "numbers")
+public class NumberEntity {
 
     @PrimaryKey
     @ColumnInfo(name = "number")
     private int number;
 
-    public PrimeNumberEntity(int number) {
+    @ColumnInfo(name = "isPrime")
+    private boolean isPrime;
+
+    public NumberEntity(int number, boolean isPrime) {
         this.number = number;
+        this.isPrime = isPrime;
     }
 
     public int getNumber() {
         return number;
+    }
+
+    public boolean isPrime() {
+        return isPrime;
     }
 }

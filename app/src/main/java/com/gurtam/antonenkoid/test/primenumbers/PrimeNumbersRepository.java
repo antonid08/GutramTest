@@ -3,7 +3,7 @@ package com.gurtam.antonenkoid.test.primenumbers;
 import android.content.Context;
 
 import com.gurtam.antonenkoid.test.AppRoomDatabase;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntityDao;
 
 import java.util.List;
@@ -16,11 +16,15 @@ public class PrimeNumbersRepository {
         primeNumberDao = AppRoomDatabase.getDatabase(context).primeNumberEntityDao();
     }
 
-    public void insertPrimeNumber(PrimeNumberEntity number) {
+    public void insertNumber(NumberEntity number) {
         primeNumberDao.insert(number);
     }
 
-    public List<PrimeNumberEntity> getPrimeNumbers(int index, int size) {
+    public void updateNumber(NumberEntity number) {
+        primeNumberDao.update(number);
+    }
+
+    public List<NumberEntity> getPrimeNumbers(int index, int size) {
         return primeNumberDao.getNumbers(index, size);
     }
 
