@@ -11,4 +11,6 @@
     <string name="previous_page">Previous page</string>
     <string name="next_page">Next page</string>
 
+    <string name="generating_time_pattern">Sequence was generated for %1$.2f seconds</string>
+
 </resources>

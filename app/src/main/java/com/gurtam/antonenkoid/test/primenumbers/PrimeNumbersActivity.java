@@ -87,6 +87,7 @@ public class PrimeNumbersActivity extends AppCompatActivity {
     @OnClick(R.id.generate)
     void onGenerateClick() {
         if (!TextUtils.isEmpty(limitInput.getText())) {
+            viewModel.getGeneratingTimeTracker().start();
             viewModel.generatePrimeNumbers(Integer.valueOf(limitInput.getText().toString()));
             UiUtils.hideKeyboard(this);
         } else {
@@ -101,6 +102,11 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
         pagination.setNextPageAvailable(primeNumbersChunk.isNextPageAvailable());
         pagination.setPreviousPageAvailable(primeNumbersChunk.getPage().getIndex() > 0);
+
+        if (viewModel.getGeneratingTimeTracker().hasStarted()) {
+            double generatingTime = (double) viewModel.getGeneratingTimeTracker().finish() / 1000;
+            Dialogs.showOkDialog(this, String.format(getString(R.string.generating_time_pattern), generatingTime));
+        }
     }
 
     private void bindStatus(Status status) {

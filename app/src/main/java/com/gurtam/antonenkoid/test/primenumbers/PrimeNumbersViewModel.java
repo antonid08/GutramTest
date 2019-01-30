@@ -39,6 +39,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     private int currentUpperLimit;
 
+    private TimeTracker generatingTimeTracker;
+
     public PrimeNumbersViewModel(@NonNull Application application) {
         super(application);
 
@@ -51,6 +53,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         primeNumbersChunk = new MutableLiveData<>();
 
         paginationManager = new PaginationManager();
+
+        generatingTimeTracker = new TimeTracker();
     }
 
     void generatePrimeNumbers(int limit) {
@@ -82,6 +86,10 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     void clearPrimeNumbersCache() {
         new ClearCacheAsyncTask().execute();
+    }
+
+    TimeTracker getGeneratingTimeTracker() {
+        return generatingTimeTracker;
     }
 
     // fixme remove it

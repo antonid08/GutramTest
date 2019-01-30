@@ -56,6 +56,19 @@ public class Dialogs {
     }
 
     /**
+     * Shows information dialog with Ok button.
+     *
+     * @param context Context to use
+     * @param text message
+     */
+    public static void showOkDialog(Context context, String text) {
+        new AlertDialog.Builder(context)
+            .setMessage(text)
+            .setPositiveButton("Ok", null)
+            .show();
+    }
+
+    /**
      * Shows confirmation dialog with two buttons YES and NO.
      *
      * @param context Context to use
@@ -65,7 +78,7 @@ public class Dialogs {
      * @param okClick click listener for the button Yes
      */
     public static void showOkNoDialog(Context context, @StringRes int message, @StringRes int okStringId,
-                                      @StringRes int noStringId, DialogInterface.OnClickListener okClick) {
+        @StringRes int noStringId, DialogInterface.OnClickListener okClick) {
 
         new AlertDialog.Builder(context)
             .setMessage(message)
