@@ -113,11 +113,21 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         if (status.isInProgress()) {
             //todo disable menu
             progress.show();
-        } else {
+        } else if (status.isSuccess()) {
             //todo save state of pagination after orientation changing
-            viewModel.receiveFirstPrimeNumbersPage();
             progress.hide();
+            viewModel.receiveFirstPrimeNumbersPage();
+        } else {
+            processCommonError(status.getError());
         }
+    }
+
+    private void processCommonError(String errorText) {
+        progress.hide();
+        adapter.clear();
+        pagination.setPreviousPageAvailable(false);
+        pagination.setNextPageAvailable(false);
+        Dialogs.showOkDialog(this, errorText);
     }
 
     private class NumbersPageChangeListener implements PaginationView.OnPageChangedListener {

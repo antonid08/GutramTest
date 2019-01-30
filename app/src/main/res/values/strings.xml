@@ -13,4 +13,6 @@
 
     <string name="generating_time_pattern">Sequence was generated for %1$.2f seconds</string>
 
+    <string name="generation_timeout_message">Unsuccessfully. Generation timeout achieved.</string>
+
 </resources>

@@ -35,6 +35,14 @@ public abstract class BaseRecyclerAdapter<T, VH extends BaseRecyclerAdapter.Item
         notifyDataSetChanged();
     }
 
+    /**
+     * Clear adapter.
+     */
+    public void clear() {
+        itemsList = new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
     private T getItem(int position) {
         return itemsList.get(position);
     }

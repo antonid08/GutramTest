@@ -7,6 +7,7 @@ import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -20,13 +21,15 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
 
     private static final Logger LOGGER = Logger.getLogger(ConcurrentNaivePrimeNumbersGenerator.class.getSimpleName());
 
-    private static final int GENERATING_TIMEOUT_MS = 5000;
+    private static final long GENERATING_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(5);
 
     private ExecutorService threadPool;
 
     private PrimeNumbersCache cache;
 
     private Timer timeoutTimer;
+
+    private volatile boolean shouldStop = false;
 
 
     public ConcurrentNaivePrimeNumbersGenerator(PrimeNumbersCache cache) {
@@ -39,45 +42,70 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
             return;
         }
 
-
         final int cachedNumbersCount = cache.getCachedNumbersCount();
 
         if (cachedNumbersCount >= limit) {
             return;
         }
 
-        insertEmptyValues(cachedNumbersCount, limit);
-
-        int threadPoolSize = calculateThreadPoolSize(cachedNumbersCount, limit);
-        threadPool = Executors.newFixedThreadPool(threadPoolSize);
         initializeTimeoutTimer();
 
         try {
-            threadPool.invokeAll(createChunkProcessors(cachedNumbersCount, limit, threadPoolSize));
-            timeoutTimer.cancel();
+            insertEmptyValues(cachedNumbersCount, limit);
+        }
+        catch (GenerationTimeoutException e) {
+            rollback();
+            throw e;
+        }
+
+        int threadPoolSize = calculateThreadPoolSize(cachedNumbersCount, limit);
+        threadPool = Executors.newFixedThreadPool(threadPoolSize);
+
+        try {
+            threadPool.invokeAll(createNumbersChunksProcessors(cachedNumbersCount, limit, threadPoolSize));
         }
         catch (InterruptedException e) {
             LOGGER.warning("Generator was interrupted before generation finished.");
-            timeoutTimer.cancel();
-            cache.clear();
+            rollback();
             throw new GenerationTimeoutException();
         }
 
+        // check if threads in ThreadPool was interrupted
+        if (shouldStop) {
+            rollback();
+            throw new GenerationTimeoutException();
+        } else {
+            cancelTimeoutTimerIfExists();
+        }
     }
 
     private void initializeTimeoutTimer() {
-        if (timeoutTimer != null) {
-            timeoutTimer.cancel();
-        }
+        cancelTimeoutTimerIfExists();
 
         timeoutTimer = new Timer();
         timeoutTimer.schedule(new TimeoutTask(), GENERATING_TIMEOUT_MS);
     }
 
-    private void insertEmptyValues(int cachedNumbersCount, int limit) {
+    private void cancelTimeoutTimerIfExists() {
+        if (timeoutTimer != null) {
+            timeoutTimer.cancel();
+        }
+    }
+
+    private void insertEmptyValues(int cachedNumbersCount, int limit) throws GenerationTimeoutException {
         for (int i = cachedNumbersCount; i < limit; i++) {
+            if (shouldStop) {
+                throw new GenerationTimeoutException();
+            }
+
             cache.put(i, false);
         }
+    }
+
+    private void rollback() {
+        cancelTimeoutTimerIfExists();
+        shouldStop = false;
+        cache.clear();
     }
 
     private int calculateThreadPoolSize(int cachedNumbersCount, int limit) {
@@ -87,7 +115,7 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         return itemsToProcessCount < availableProcessors ? itemsToProcessCount : availableProcessors;
     }
 
-    private List<Callable<Void>> createChunkProcessors(int cachedNumbersCount, int limit, int threadPoolSize) {
+    private List<Callable<Void>> createNumbersChunksProcessors(int cachedNumbersCount, int limit, int threadPoolSize) {
         List<Callable<Void>> processors = new ArrayList<>();
 
         int fullChunkSize = (int) Math.ceil((double) (limit - cachedNumbersCount) / threadPoolSize);
@@ -132,6 +160,11 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         @Override
         public Void call() {
             for (int number = from; number < to; number++) {
+
+                if (Thread.currentThread().isInterrupted()) {
+                    return null;
+                }
+
                 if (isPrime(number)) {
                     cache.put(number, true);
                 }
@@ -141,12 +174,15 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         }
     }
 
-
     private class TimeoutTask extends TimerTask {
 
         @Override
         public void run() {
-            threadPool.shutdownNow();
+            shouldStop = true;
+
+            if (threadPool != null) {
+                threadPool.shutdownNow();
+            }
         }
     }
 

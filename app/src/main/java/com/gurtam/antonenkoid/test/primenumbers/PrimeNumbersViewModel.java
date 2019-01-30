@@ -3,7 +3,9 @@ package com.gurtam.antonenkoid.test.primenumbers;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gurtam.antonenkoid.test.R;
 import com.gurtam.antonenkoid.test.primenumbers.generator.ConcurrentNaivePrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generator.GenerationTimeoutException;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersCache;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
@@ -114,7 +116,12 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
         @Override
         protected void onFail(Exception e) {
-            // todo
+            if (e instanceof GenerationTimeoutException) {
+               status.setValue(com.gurtam.antonenkoid.test.utils.Status.onError(
+                   getApplication().getString(R.string.generation_timeout_message)));
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -124,7 +131,7 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
         private int upperLimit;
 
-        public GetNumbersAsyncTask(Page page, int upperLimit) {
+        GetNumbersAsyncTask(Page page, int upperLimit) {
             this.page = page;
             this.upperLimit = upperLimit;
         }
