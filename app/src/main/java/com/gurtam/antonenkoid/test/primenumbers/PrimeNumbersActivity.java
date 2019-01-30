@@ -1,18 +1,17 @@
 package com.gurtam.antonenkoid.test.primenumbers;
 
-import android.os.Bundle;
-import android.text.TextUtils;
-import android.widget.EditText;
-
 import com.gurtam.antonenkoid.test.R;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.utils.Dialogs;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.UiUtils;
+import com.gurtam.antonenkoid.test.utils.pagination.PaginationManager;
+import com.gurtam.antonenkoid.test.utils.pagination.PaginationView;
 import com.gurtam.antonenkoid.test.utils.views.ProgressPanel;
-import com.gurtam.antonenkoid.test.utils.views.pagination.Page;
-import com.gurtam.antonenkoid.test.utils.views.pagination.PaginationView;
 
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -29,8 +28,6 @@ import butterknife.OnClick;
  */
 public class PrimeNumbersActivity extends AppCompatActivity {
 
-    private static final int NUMBERS_PAGE_SIZE = 100;
-
     @BindView(R.id.progress)
     ProgressPanel progress;
 
@@ -40,14 +37,15 @@ public class PrimeNumbersActivity extends AppCompatActivity {
     @BindView(R.id.pagination)
     PaginationView pagination;
 
-    @BindView(R.id.primeNumbers)
-    RecyclerView primeNumbers;
+    @BindView(R.id.numbers)
+    RecyclerView numbers;
 
     private PrimeNumbersViewModel viewModel;
 
     private PrimeNumbersAdapter adapter;
 
-    private Page currentNumbersPage;
+    private PaginationManager paginationManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +57,13 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
         viewModel.getStatus().observe(this, this::bindGeneratingStatus);
 
-        currentNumbersPage = new Page(0, NUMBERS_PAGE_SIZE);
+        paginationManager = new PaginationManager();
         pagination.setOnPageChangedListener(new NumbersPageChangeListener());
         UiUtils.setVisibility(false, pagination);
 
-        primeNumbers.setLayoutManager(new LinearLayoutManager(this));
-        primeNumbers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
-        primeNumbers.setAdapter(adapter = new PrimeNumbersAdapter());
+        numbers.setLayoutManager(new LinearLayoutManager(this));
+        numbers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
+        numbers.setAdapter(adapter = new PrimeNumbersAdapter());
     }
 
     @OnClick(R.id.generate)
@@ -80,15 +78,20 @@ public class PrimeNumbersActivity extends AppCompatActivity {
     }
 
     private void bindPrimeNumbersChunk(PrimeNumbersChunk primeNumbersChunk) {
-        currentNumbersPage = primeNumbersChunk.getPage();
-        adapter.setData(primeNumbersChunk.getPrimeNumbers());
+        UiUtils.setVisibility(true, pagination);
+        adapter.setData(primeNumbersChunk.getNumbers());
+        numbers.scrollToPosition(0);
+
+        pagination.setNextPageAvailable(primeNumbersChunk.isNextPageAvailable());
+        pagination.setPreviousPageAvailable(primeNumbersChunk.getPage().getIndex() > 0);
     }
 
     private void bindGeneratingStatus(Status status) {
         if (status.isInProgress()) {
             progress.show();
         } else {
-            viewModel.receivePrimeNumbers(new Page(0, NUMBERS_PAGE_SIZE));
+            paginationManager = new PaginationManager();
+            viewModel.receivePrimeNumbers(paginationManager.getCurrentPage());
             progress.hide();
         }
     }
@@ -97,12 +100,12 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
         @Override
         public void onPreviousPage() {
-
+            viewModel.receivePrimeNumbers(paginationManager.previousPage());
         }
 
         @Override
         public void onNextPage() {
-
+            viewModel.receivePrimeNumbers(paginationManager.nextPage());
         }
     }
 

@@ -39,13 +39,13 @@
 
         </LinearLayout>
 
-        <com.gurtam.antonenkoid.test.utils.views.pagination.PaginationView
+        <com.gurtam.antonenkoid.test.utils.pagination.PaginationView
             android:id="@+id/pagination"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
         <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/primeNumbers"
+                android:id="@+id/numbers"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 

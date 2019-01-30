@@ -3,21 +3,18 @@ package com.gurtam.antonenkoid.test.primenumbers.generator;
 import com.gurtam.antonenkoid.test.primenumbers.PrimeNumbersRepository;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntity;
 
-public class DummyPrimeNumbersGenerator implements PrimeNumbersGenerator {
-
-    private PrimeNumbersRepository primeNumbersRepository;
-
-    public DummyPrimeNumbersGenerator(PrimeNumbersRepository primeNumbersRepository) {
-        this.primeNumbersRepository = primeNumbersRepository;
-    }
+/**
+ * Generate and save sequence of prime numbers using brut force.
+ */
+public class NaivePrimeNumbersGenerator implements PrimeNumbersGenerator {
 
     @Override
-    public void generate(int limit) {
-        primeNumbersRepository.clearPrimeNumbers();
+    public void generate(int limit, PrimeNumbersRepository repository) {
+        repository.clearPrimeNumbers();
 
         for (int number = 2; number < limit; number++) {
             if (isPrime(number)) {
-                primeNumbersRepository.insertPrimeNumber(new PrimeNumberEntity(number));
+                repository.insertPrimeNumber(new PrimeNumberEntity(number));
             }
         }
     }

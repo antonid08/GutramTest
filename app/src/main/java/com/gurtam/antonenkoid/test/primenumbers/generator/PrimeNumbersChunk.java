@@ -1,25 +1,38 @@
 package com.gurtam.antonenkoid.test.primenumbers.generator;
 
-import com.gurtam.antonenkoid.test.utils.views.pagination.Page;
-
 import java.util.List;
 
+import com.gurtam.antonenkoid.test.utils.pagination.Page;
+
+/**
+ * Represents list of prime numbers and info about current page of numbers.
+ *
+ * @author antonenkoid
+ */
 public class PrimeNumbersChunk {
 
     private Page page;
 
-    private List<Integer> primeNumbers;
+    private List<Integer> numbers;
 
-    public PrimeNumbersChunk(Page page, List<Integer> primeNumbers) {
+    private boolean isNextPageAvailable;
+
+    public PrimeNumbersChunk(List<Integer> numbers, Page page, boolean isNextPageAvailable) {
+        this.numbers = numbers;
         this.page = page;
-        this.primeNumbers = primeNumbers;
+        this.isNextPageAvailable = isNextPageAvailable;
+    }
+
+    public List<Integer> getNumbers() {
+        return numbers;
     }
 
     public Page getPage() {
         return page;
     }
 
-    public List<Integer> getPrimeNumbers() {
-        return primeNumbers;
+    public boolean isNextPageAvailable() {
+        return isNextPageAvailable;
     }
+
 }

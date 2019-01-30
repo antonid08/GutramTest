@@ -1,19 +1,18 @@
 package com.gurtam.antonenkoid.test.primenumbers;
 
-import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.gurtam.antonenkoid.test.primenumbers.generator.DummyPrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generator.NaivePrimeNumbersGenerator;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntity;
 import com.gurtam.antonenkoid.test.utils.Status;
-import com.gurtam.antonenkoid.test.utils.views.pagination.Page;
+import com.gurtam.antonenkoid.test.utils.pagination.Page;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
@@ -36,7 +35,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
     public PrimeNumbersViewModel(@NonNull Application application) {
         super(application);
 
-        primeNumbersGenerator = new DummyPrimeNumbersGenerator(primeNumbersRepository = new PrimeNumbersRepository(getApplication())); //fixme inject
+        primeNumbersRepository = new PrimeNumbersRepository(getApplication());
+        primeNumbersGenerator = new NaivePrimeNumbersGenerator(); //fixme inject
 
         status = new MutableLiveData<>();
         primeNumbersChunk = new MutableLiveData<>();
@@ -70,7 +70,7 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
         @Override
         public void run() {
-            primeNumbersGenerator.generate(limit);
+            primeNumbersGenerator.generate(limit, primeNumbersRepository);
 
             new Handler(Looper.getMainLooper()).post(() -> {
                 status.setValue(Status.onSuccess());
@@ -88,15 +88,25 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
         @Override
         public void run() {
-            List<PrimeNumberEntity> primeNumberEntities = primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize());
-            List<Integer> primeNumbers = new ArrayList<>();
-            for (PrimeNumberEntity primeNumberEntity : primeNumberEntities) {
-                primeNumbers.add(primeNumberEntity.getNumber());
-            }
+            List<PrimeNumberEntity> primeNumberEntities =
+                primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1);
+
+            boolean isNextPageAvailable = primeNumberEntities.size() == page.getSize() + 1;
+            List<Integer> primeNumbers =
+                convert(isNextPageAvailable ? primeNumberEntities.subList(0, page.getSize()) : primeNumberEntities);
 
             new Handler(Looper.getMainLooper()).post(() -> {
-                primeNumbersChunk.setValue(new PrimeNumbersChunk(page, primeNumbers));
+                primeNumbersChunk.setValue(new PrimeNumbersChunk(primeNumbers, page, isNextPageAvailable));
             });
+        }
+
+        private List<Integer> convert(List<PrimeNumberEntity> primeNumbers) {
+            List<Integer> result = new ArrayList<>();
+            for (PrimeNumberEntity primeNumberEntity : primeNumbers) {
+                result.add(primeNumberEntity.getNumber());
+            }
+
+            return result;
         }
     }
 

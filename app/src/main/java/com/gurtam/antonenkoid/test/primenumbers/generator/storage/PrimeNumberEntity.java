@@ -4,6 +4,11 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+/**
+ * Describes entity of prime number in database.
+ *
+ * @author antonenkoid
+ */
 @Entity(tableName = "prime_numbers")
 public class PrimeNumberEntity {
 
