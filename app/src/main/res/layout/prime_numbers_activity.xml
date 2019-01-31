@@ -28,6 +28,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="4"
                     android:inputType="number"
+                    android:maxLength="9"
                     android:imeOptions="flagNoExtractUi"/>
 
             <Button
@@ -40,9 +41,9 @@
         </LinearLayout>
 
         <com.gurtam.antonenkoid.test.utils.pagination.PaginationView
-            android:id="@+id/pagination"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+                android:id="@+id/pagination"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/numbers"
