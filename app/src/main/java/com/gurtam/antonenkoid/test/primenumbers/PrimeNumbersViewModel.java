@@ -10,7 +10,7 @@ import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersCache;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
 import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
 import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
-import com.gurtam.antonenkoid.test.utils.BaseAsyncTask;
+import com.gurtam.antonenkoid.test.utils.BaseWeakReferenceAsyncTask;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.pagination.Page;
 import com.gurtam.antonenkoid.test.utils.pagination.PaginationManager;
@@ -62,7 +62,7 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
     void generatePrimeNumbers(int limit) {
         currentUpperLimit = limit;
         status.setValue(Status.onStart());
-        new PrimeNumberAsyncTask(limit).execute();
+        new PrimeNumberAsyncTask(this, limit).execute();
     }
 
     MutableLiveData<PrimeNumbersChunk> getPrimeNumbersChunk() {
@@ -71,15 +71,15 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     void receiveFirstPrimeNumbersPage() {
         paginationManager = new PaginationManager();
-        new GetNumbersAsyncTask(paginationManager.getCurrentPage(), currentUpperLimit).execute();
+        new ReceivePrimeNumbersAsyncTask(this, paginationManager.getCurrentPage(), currentUpperLimit).execute();
     }
 
     void receivePreviousPrimeNumbersPage() {
-        new GetNumbersAsyncTask(paginationManager.previousPage(), currentUpperLimit).execute();
+        new ReceivePrimeNumbersAsyncTask(this, paginationManager.previousPage(), currentUpperLimit).execute();
     }
 
     void receiveNextPrimeNumbersPage() {
-        new GetNumbersAsyncTask(paginationManager.nextPage(), currentUpperLimit).execute();
+        new ReceivePrimeNumbersAsyncTask(this, paginationManager.nextPage(), currentUpperLimit).execute();
     }
 
     MutableLiveData<Status> getStatus() {
@@ -87,59 +87,61 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
     }
 
     void clearPrimeNumbersCache() {
-        new ClearCacheAsyncTask().execute();
+        new ClearCacheAsyncTask(this).execute();
     }
 
     TimeTracker getGeneratingTimeTracker() {
         return generatingTimeTracker;
     }
 
-    // fixme remove it
-    private class PrimeNumberAsyncTask extends BaseAsyncTask<Void, Void> {
+    private static class PrimeNumberAsyncTask extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, Void> {
 
         private int limit;
 
-        PrimeNumberAsyncTask(int limit) {
+        PrimeNumberAsyncTask(PrimeNumbersViewModel viewModel, int limit) {
+            super(viewModel);
             this.limit = limit;
         }
 
         @Override
-        protected Void asyncOperation(Void... voids) throws Exception {
-            primeNumbersGenerator.generate(limit);
+        protected Void executeAsyncOperation(Void... voids) throws Exception {
+            getReference().primeNumbersGenerator.generate(limit);
             return null;
         }
 
         @Override
-        protected void onSuccess(Void aVoid) {
-            status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
+        protected void success(Void aVoid) {
+            getReference().status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
         }
 
         @Override
-        protected void onFail(Exception e) {
+        protected void fail(Exception e) {
             if (e instanceof GenerationTimeoutException) {
-               status.setValue(com.gurtam.antonenkoid.test.utils.Status.onError(
-                   getApplication().getString(R.string.generation_timeout_message)));
+                getReference().status.setValue(com.gurtam.antonenkoid.test.utils.Status.onError(
+                    getReference().getApplication().getString(R.string.generation_timeout_message)));
             } else {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    private class GetNumbersAsyncTask extends BaseAsyncTask<Void, PrimeNumbersChunk> {
+    private static class ReceivePrimeNumbersAsyncTask
+        extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, PrimeNumbersChunk> {
 
         private Page page;
 
         private int upperLimit;
 
-        GetNumbersAsyncTask(Page page, int upperLimit) {
+        ReceivePrimeNumbersAsyncTask(PrimeNumbersViewModel viewModel, Page page, int upperLimit) {
+            super(viewModel);
             this.page = page;
             this.upperLimit = upperLimit;
         }
 
         @Override
-        protected PrimeNumbersChunk asyncOperation(Void... voids) throws Exception {
+        protected PrimeNumbersChunk executeAsyncOperation(Void... voids) throws Exception {
             List<NumberEntity> primeNumberEntities =
-                primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1, upperLimit);
+                getReference().primeNumbersRepository.getPrimeNumbers(page.getIndex(), page.getSize() + 1, upperLimit);
 
             boolean isNextPageAvailable = primeNumberEntities.size() == page.getSize() + 1;
             List<Integer> primeNumbers =
@@ -150,12 +152,12 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
 
         @Override
-        protected void onSuccess(PrimeNumbersChunk numbersChunk) {
-            primeNumbersChunk.setValue(numbersChunk);
+        protected void success(PrimeNumbersChunk numbersChunk) {
+            getReference().primeNumbersChunk.setValue(numbersChunk);
         }
 
         @Override
-        protected void onFail(Exception e) {
+        protected void fail(Exception e) {
             // todo
         }
 
@@ -169,21 +171,25 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         }
     }
 
-    private class ClearCacheAsyncTask extends BaseAsyncTask<Void, Void> {
+    private static class ClearCacheAsyncTask extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, Void> {
+
+        ClearCacheAsyncTask(PrimeNumbersViewModel viewModel) {
+            super(viewModel);
+        }
 
         @Override
-        protected Void asyncOperation(Void... voids) throws Exception {
-            primeNumbersCache.clear();
+        protected Void executeAsyncOperation(Void... voids) throws Exception {
+            getReference().primeNumbersCache.clear();
             return null;
         }
 
         @Override
-        protected void onSuccess(Void aVoid) {
-            status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
+        protected void success(Void aVoid) {
+            getReference().status.setValue(com.gurtam.antonenkoid.test.utils.Status.onSuccess());
         }
 
         @Override
-        protected void onFail(Exception e) {
+        protected void fail(Exception e) {
 
         }
     }
