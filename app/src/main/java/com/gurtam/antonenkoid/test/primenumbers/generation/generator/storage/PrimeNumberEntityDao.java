@@ -16,10 +16,10 @@ import androidx.room.Update;
 @Dao
 public interface PrimeNumberEntityDao {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(NumberEntity primeNumber);
 
-    @Update(onConflict = OnConflictStrategy.IGNORE)
+    @Update
     void update(NumberEntity number);
 
     @Query("DELETE FROM numbers")

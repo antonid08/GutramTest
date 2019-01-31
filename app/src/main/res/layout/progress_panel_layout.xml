@@ -10,8 +10,9 @@
 
     <ProgressBar
             android:id="@+id/progressBar"
-            android:layout_width="@dimen/progress_wheel_size"
+            android:layout_width="120dp"
             android:layout_height="@dimen/progress_wheel_size"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
 
 </FrameLayout>

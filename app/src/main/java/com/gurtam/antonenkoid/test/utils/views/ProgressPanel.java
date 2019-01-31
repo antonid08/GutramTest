@@ -7,6 +7,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -23,10 +24,10 @@ import butterknife.ButterKnife;
  *
  * @author antonenkoid
  */
-public class ProgressPanel extends FrameLayout implements Progress {
+public class ProgressPanel extends FrameLayout {
 
     @BindView(R.id.progressBar)
-    View progressBar;
+    ProgressBar progressBar;
 
     private View progressView;
 
@@ -43,12 +44,16 @@ public class ProgressPanel extends FrameLayout implements Progress {
     private void init() {
         progressView = UiUtils.inflate(getContext(), R.layout.progress_panel_layout);
 
-        progressView.setOnClickListener((view) -> {});
+        progressView.setOnClickListener((view) -> {
+        });
 
-        ButterKnife.bind(progressView);
+        ButterKnife.bind(this, progressView);
     }
 
-    @Override
+    public final void setProgress(int percents) {
+        progressBar.setProgress(percents);
+    }
+
     public final void show() {
         if (indexOfChild(progressView) < 0) {
             addView(progressView);
@@ -57,7 +62,6 @@ public class ProgressPanel extends FrameLayout implements Progress {
         changeProgressVisibility(true);
     }
 
-    @Override
     public final void hide() {
         changeProgressVisibility(false);
     }

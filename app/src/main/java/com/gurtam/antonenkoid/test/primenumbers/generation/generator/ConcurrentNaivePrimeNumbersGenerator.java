@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -31,13 +32,14 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
 
     private volatile boolean shouldStop = false;
 
+    private ProgressCounter progressCounter;
 
     public ConcurrentNaivePrimeNumbersGenerator(PrimeNumbersCache cache) {
         this.cache = cache;
     }
 
     @Override
-    public void generate(int limit) throws GenerationTimeoutException {
+    public void generate(int limit, GenerationProgressListener progressListener) throws GenerationTimeoutException {
         if (limit < 2) {
             return;
         }
@@ -47,6 +49,8 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         if (cachedNumbersCount >= limit) {
             return;
         }
+
+        progressCounter = new ProgressCounter(limit - cachedNumbersCount, progressListener);
 
         initializeTimeoutTimer();
 
@@ -99,6 +103,7 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
             }
 
             cache.put(i, false);
+            progressCounter.step();
         }
     }
 
@@ -144,6 +149,27 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
         return true;
     }
 
+    private static class ProgressCounter {
+
+        private volatile AtomicInteger stepsDone;
+
+        private int totalStepsCount;
+
+        private GenerationProgressListener progressListener;
+
+        public ProgressCounter(int numbersToProcess, GenerationProgressListener progressListener) {
+            this.stepsDone = new AtomicInteger(0);
+            this.totalStepsCount = numbersToProcess * 2; // * 2 because every number requires 2 steps for process.
+            this.progressListener = progressListener;
+        }
+
+        void step() {
+            stepsDone.incrementAndGet();
+            progressListener.percentsGenerated((int) (stepsDone.floatValue() * 100 / totalStepsCount));
+        }
+
+    }
+
     private class ProcessNumbersChunkCallable implements Callable<Void> {
 
         private int from;
@@ -168,6 +194,7 @@ public class ConcurrentNaivePrimeNumbersGenerator implements PrimeNumbersGenerat
                 if (isPrime(number)) {
                     cache.put(number, true);
                 }
+                progressCounter.step();
             }
 
             return null;

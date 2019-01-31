@@ -66,6 +66,7 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         viewModel = ViewModelProviders.of(this).get(PrimeNumbersViewModel.class);
         viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
         viewModel.getStatus().observe(this, this::bindStatus);
+        viewModel.getGeneratingProgress().observe(this, this::bindGeneratingProcess);
 
     }
 
@@ -154,6 +155,10 @@ public class PrimeNumbersActivity extends AppCompatActivity {
     private void setMenuEnabled(boolean enabled) {
         this.isMenuEnabled = enabled;
         invalidateOptionsMenu();
+    }
+
+    private void bindGeneratingProcess(int percents) {
+        progress.setProgress(percents);
     }
 
     private class NumbersPageChangeListener implements PaginationView.OnPageChangedListener {

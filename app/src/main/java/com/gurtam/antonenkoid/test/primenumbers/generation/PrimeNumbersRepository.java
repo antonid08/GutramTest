@@ -20,9 +20,7 @@ public class PrimeNumbersRepository {
     }
 
     public void updateOrInsertNumber(NumberEntity number) {
-        if (primeNumberDao.insert(number) == -1) {
-            primeNumberDao.update(number);
-        }
+        primeNumberDao.insert(number);
     }
 
     public void updateNumber(NumberEntity number) {

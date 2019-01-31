@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 
 import com.gurtam.antonenkoid.test.R;
 import com.gurtam.antonenkoid.test.primenumbers.generation.generator.ConcurrentNaivePrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.GenerationProgressListener;
 import com.gurtam.antonenkoid.test.primenumbers.generation.generator.GenerationTimeoutException;
 import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersCache;
 import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersChunk;
@@ -19,6 +20,8 @@ import com.gurtam.antonenkoid.test.utils.pagination.Page;
 import com.gurtam.antonenkoid.test.utils.pagination.PaginationManager;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
@@ -48,6 +51,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     private GenerationsRepository generationsRepository;
 
+    private MutableLiveData<Integer> generatingProgress;
+
     public PrimeNumbersViewModel(@NonNull Application application) {
         super(application);
 
@@ -64,12 +69,14 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         generatingTimeTracker = new TimeTracker();
 
         generationsRepository = new GenerationsRepository(getApplication(), Executors.newSingleThreadExecutor());
+
+        generatingProgress = new MutableLiveData<>();
     }
 
     void generatePrimeNumbers(int limit) {
         currentUpperLimit = limit;
         status.setValue(Status.onStart());
-        new PrimeNumberAsyncTask(this, limit).execute();
+        new GeneratePrimeNumbersAsyncTask(this, limit, new GenerationPercentageListener()).execute();
     }
 
     MutableLiveData<PrimeNumbersChunk> getPrimeNumbersChunk() {
@@ -106,20 +113,29 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
             addItem(new GenerationEntity(generatingTimeTracker.getStartTime(), currentUpperLimit, elapsedTimeSeconds));
     }
 
-    private static class PrimeNumberAsyncTask extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, Void> {
+    MutableLiveData<Integer> getGeneratingProgress() {
+        return generatingProgress;
+    }
+
+
+    private static class GeneratePrimeNumbersAsyncTask extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, Void> {
 
         private int limit;
+        private GenerationProgressListener progressListener;
 
-        PrimeNumberAsyncTask(PrimeNumbersViewModel viewModel, int limit) {
+        GeneratePrimeNumbersAsyncTask(PrimeNumbersViewModel viewModel, int limit, GenerationProgressListener progressListener) {
             super(viewModel);
             this.limit = limit;
+            this.progressListener = progressListener;
         }
 
         @Override
         protected Void executeAsyncOperation(Void... voids) throws Exception {
-            getReference().primeNumbersGenerator.generate(limit);
+            getReference().primeNumbersGenerator.
+                generate(limit, progressListener);
             return null;
         }
+
 
         @Override
         protected void success(Void aVoid) {
@@ -135,6 +151,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
                 throw new RuntimeException(e);
             }
         }
+
+
     }
 
     private static class ReceivePrimeNumbersAsyncTask
@@ -203,6 +221,14 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         @Override
         protected void fail(Exception e) {
 
+        }
+    }
+
+    private class GenerationPercentageListener implements GenerationProgressListener {
+
+        @Override
+        public void percentsGenerated(int percents) {
+            new Handler(Looper.getMainLooper()).post(() -> generatingProgress.setValue(percents));
         }
     }
 
