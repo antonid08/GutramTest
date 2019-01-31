@@ -46,6 +46,7 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
     private PrimeNumbersAdapter adapter;
 
+    private boolean isMenuEnabled = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +59,17 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         viewModel.getStatus().observe(this, this::bindStatus);
 
         pagination.setOnPageChangedListener(new NumbersPageChangeListener());
-        UiUtils.setVisibility(false, pagination);
+        pagination.setPreviousPageAvailable(false);
+        pagination.setNextPageAvailable(false);
 
         numbers.setLayoutManager(new LinearLayoutManager(this));
         numbers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
         numbers.setAdapter(adapter = new PrimeNumbersAdapter());
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        return isMenuEnabled();
     }
 
     @Override
@@ -103,7 +110,9 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         pagination.setNextPageAvailable(primeNumbersChunk.isNextPageAvailable());
         pagination.setPreviousPageAvailable(primeNumbersChunk.getPage().getIndex() > 0);
 
-        if (viewModel.getGeneratingTimeTracker().hasStarted()) {
+        Status generatingStatus = viewModel.getStatus().getValue();
+
+        if (viewModel.getGeneratingTimeTracker().hasStarted() && generatingStatus != null && !generatingStatus.isInProgress()) {
             double generatingTime = (double) viewModel.getGeneratingTimeTracker().finish() / 1000;
             Dialogs.showOkDialog(this, String.format(getString(R.string.generating_time_pattern), generatingTime));
         }
@@ -111,14 +120,16 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
     private void bindStatus(Status status) {
         if (status.isInProgress()) {
-            //todo disable menu
             progress.show();
+            setMenuEnabled(false);
         } else if (status.isSuccess()) {
             //todo save state of pagination after orientation changing
             progress.hide();
             viewModel.receiveFirstPrimeNumbersPage();
+            setMenuEnabled(true);
         } else {
             processCommonError(status.getError());
+            setMenuEnabled(true);
         }
     }
 
@@ -128,6 +139,15 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         pagination.setPreviousPageAvailable(false);
         pagination.setNextPageAvailable(false);
         Dialogs.showOkDialog(this, errorText);
+    }
+
+    private boolean isMenuEnabled() {
+        return isMenuEnabled;
+    }
+
+    private void setMenuEnabled(boolean enabled) {
+        this.isMenuEnabled = enabled;
+        invalidateOptionsMenu();
     }
 
     private class NumbersPageChangeListener implements PaginationView.OnPageChangedListener {
