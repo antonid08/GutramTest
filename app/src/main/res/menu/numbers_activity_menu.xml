@@ -3,7 +3,13 @@
       xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:id="@+id/clear_cache"
-          android:title="@string/clear_cache"
+          android:title="@string/clear_cache_menu_item"
+          android:icon="@drawable/clear_cache_icon"
           app:showAsAction="always"/>
+
+    <item android:id="@+id/history"
+          android:title="@string/history_menu_item"
+          android:icon="@drawable/history_icon"
+          app:showAsAction="ifRoom"/>
 
 </menu>

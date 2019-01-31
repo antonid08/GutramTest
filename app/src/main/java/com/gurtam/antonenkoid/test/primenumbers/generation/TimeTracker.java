@@ -1,4 +1,6 @@
-package com.gurtam.antonenkoid.test.primenumbers;
+package com.gurtam.antonenkoid.test.primenumbers.generation;
+
+import java.util.Date;
 
 /**
  * Simple time tracker.
@@ -13,23 +15,28 @@ public class TimeTracker {
 
     private long startTime;
 
+    private boolean isStarted = false;
+
     public void start() {
         startTime = System.currentTimeMillis();
+        isStarted = true;
     }
 
     public long finish() {
-        if (startTime == 0) {
+        if (!isStarted) {
             throw new IllegalStateException("Start must be called before call finish");
         }
 
-        long passedTime = System.currentTimeMillis() - startTime;
-        startTime = 0;
-
-        return passedTime;
+        isStarted = false;
+        return System.currentTimeMillis() - startTime;
     }
 
-    public boolean hasStarted() {
-        return startTime != 0;
+    public Date getStartTime() {
+        return new Date(startTime);
+    }
+
+    public boolean isStarted() {
+        return isStarted;
     }
 
 }

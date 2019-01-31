@@ -1,7 +1,7 @@
-package com.gurtam.antonenkoid.test.primenumbers.generator;
+package com.gurtam.antonenkoid.test.primenumbers.generation.generator;
 
-import com.gurtam.antonenkoid.test.primenumbers.PrimeNumbersRepository;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generation.PrimeNumbersRepository;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.storage.NumberEntity;
 
 /**
  * Cache for prime numbers generation algorithm. Based on {@link PrimeNumbersRepository}

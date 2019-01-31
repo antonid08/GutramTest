@@ -1,15 +1,18 @@
-package com.gurtam.antonenkoid.test.primenumbers;
+package com.gurtam.antonenkoid.test.primenumbers.generation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import com.gurtam.antonenkoid.test.R;
-import com.gurtam.antonenkoid.test.primenumbers.generator.ConcurrentNaivePrimeNumbersGenerator;
-import com.gurtam.antonenkoid.test.primenumbers.generator.GenerationTimeoutException;
-import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersCache;
-import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
-import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersGenerator;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.ConcurrentNaivePrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.GenerationTimeoutException;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersCache;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersChunk;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersGenerator;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.storage.NumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.history.GenerationsRepository;
+import com.gurtam.antonenkoid.test.primenumbers.history.storage.GenerationEntity;
 import com.gurtam.antonenkoid.test.utils.BaseWeakReferenceAsyncTask;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.pagination.Page;
@@ -43,6 +46,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     private TimeTracker generatingTimeTracker;
 
+    private GenerationsRepository generationsRepository;
+
     public PrimeNumbersViewModel(@NonNull Application application) {
         super(application);
 
@@ -57,6 +62,8 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
         paginationManager = new PaginationManager();
 
         generatingTimeTracker = new TimeTracker();
+
+        generationsRepository = new GenerationsRepository(getApplication(), Executors.newSingleThreadExecutor());
     }
 
     void generatePrimeNumbers(int limit) {
@@ -92,6 +99,11 @@ public class PrimeNumbersViewModel extends AndroidViewModel {
 
     TimeTracker getGeneratingTimeTracker() {
         return generatingTimeTracker;
+    }
+
+    void addGenerationToHistory(float elapsedTimeSeconds) {
+        generationsRepository.
+            addItem(new GenerationEntity(generatingTimeTracker.getStartTime(), currentUpperLimit, elapsedTimeSeconds));
     }
 
     private static class PrimeNumberAsyncTask extends BaseWeakReferenceAsyncTask<PrimeNumbersViewModel, Void, Void> {

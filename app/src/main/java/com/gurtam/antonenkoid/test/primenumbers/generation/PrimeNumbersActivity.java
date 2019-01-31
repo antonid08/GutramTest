@@ -1,7 +1,8 @@
-package com.gurtam.antonenkoid.test.primenumbers;
+package com.gurtam.antonenkoid.test.primenumbers.generation;
 
 import com.gurtam.antonenkoid.test.R;
-import com.gurtam.antonenkoid.test.primenumbers.generator.PrimeNumbersChunk;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.PrimeNumbersChunk;
+import com.gurtam.antonenkoid.test.primenumbers.history.GenerationsHistoryActivity;
 import com.gurtam.antonenkoid.test.utils.Dialogs;
 import com.gurtam.antonenkoid.test.utils.Status;
 import com.gurtam.antonenkoid.test.utils.UiUtils;
@@ -54,10 +55,6 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         setContentView(R.layout.prime_numbers_activity);
         ButterKnife.bind(this);
 
-        viewModel = ViewModelProviders.of(this).get(PrimeNumbersViewModel.class);
-        viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
-        viewModel.getStatus().observe(this, this::bindStatus);
-
         pagination.setOnPageChangedListener(new NumbersPageChangeListener());
         pagination.setPreviousPageAvailable(false);
         pagination.setNextPageAvailable(false);
@@ -65,6 +62,11 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         numbers.setLayoutManager(new LinearLayoutManager(this));
         numbers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
         numbers.setAdapter(adapter = new PrimeNumbersAdapter());
+
+        viewModel = ViewModelProviders.of(this).get(PrimeNumbersViewModel.class);
+        viewModel.getPrimeNumbersChunk().observe(this, this::bindPrimeNumbersChunk);
+        viewModel.getStatus().observe(this, this::bindStatus);
+
     }
 
     @Override
@@ -85,6 +87,9 @@ public class PrimeNumbersActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.clear_cache:
                 viewModel.clearPrimeNumbersCache();
+                return true;
+            case R.id.history:
+                GenerationsHistoryActivity.start(this);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -112,8 +117,9 @@ public class PrimeNumbersActivity extends AppCompatActivity {
 
         Status generatingStatus = viewModel.getStatus().getValue();
 
-        if (viewModel.getGeneratingTimeTracker().hasStarted() && generatingStatus != null && !generatingStatus.isInProgress()) {
-            double generatingTime = (double) viewModel.getGeneratingTimeTracker().finish() / 1000;
+        if (viewModel.getGeneratingTimeTracker().isStarted() && generatingStatus != null && !generatingStatus.isInProgress()) {
+            float generatingTime = (float) viewModel.getGeneratingTimeTracker().finish() / 1000;
+            viewModel.addGenerationToHistory(generatingTime);
             Dialogs.showOkDialog(this, String.format(getString(R.string.generating_time_pattern), generatingTime));
         }
     }

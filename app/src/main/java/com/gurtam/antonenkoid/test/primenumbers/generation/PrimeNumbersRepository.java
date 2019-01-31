@@ -1,13 +1,16 @@
-package com.gurtam.antonenkoid.test.primenumbers;
+package com.gurtam.antonenkoid.test.primenumbers.generation;
 
 import java.util.List;
 
 import com.gurtam.antonenkoid.test.AppRoomDatabase;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.NumberEntity;
-import com.gurtam.antonenkoid.test.primenumbers.generator.storage.PrimeNumberEntityDao;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.storage.NumberEntity;
+import com.gurtam.antonenkoid.test.primenumbers.generation.generator.storage.PrimeNumberEntityDao;
 
 import android.content.Context;
 
+/**
+ * Repository for prime n
+ */
 public class PrimeNumbersRepository {
 
     private PrimeNumberEntityDao primeNumberDao;

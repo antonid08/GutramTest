@@ -1,4 +1,4 @@
-package com.gurtam.antonenkoid.test.primenumbers.generator;
+package com.gurtam.antonenkoid.test.primenumbers.generation.generator;
 
 /**
  * Generates prime numbers from 2 to passed limitInput and saves they to repository.

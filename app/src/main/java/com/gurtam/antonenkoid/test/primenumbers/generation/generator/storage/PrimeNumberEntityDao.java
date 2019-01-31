@@ -1,4 +1,4 @@
-package com.gurtam.antonenkoid.test.primenumbers.generator.storage;
+package com.gurtam.antonenkoid.test.primenumbers.generation.generator.storage;
 
 import java.util.List;
 

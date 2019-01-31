@@ -1,4 +1,4 @@
-package com.gurtam.antonenkoid.test.primenumbers.generator;
+package com.gurtam.antonenkoid.test.primenumbers.generation.generator;
 
 /**
  * Must be thrown when generation timeout achieved.

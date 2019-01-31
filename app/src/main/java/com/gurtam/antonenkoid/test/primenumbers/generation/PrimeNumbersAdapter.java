@@ -1,4 +1,4 @@
-package com.gurtam.antonenkoid.test.primenumbers;
+package com.gurtam.antonenkoid.test.primenumbers.generation;
 
 import android.view.ViewGroup;
 import android.widget.TextView;
